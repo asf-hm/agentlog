@@ -8,21 +8,6 @@ All items deferred from current release. Organized by target version and categor
 
 ### Core — Verify
 
-- **`runId` cross-check** — assert `event.runId` matches the filename `<runId>.jsonl`
-  Why: Events from one run can be moved into another file's JSONL and verify clean. Filename-to-runId binding closes chain substitution attacks.
-
-- **Structured error codes** instead of free-text strings
-  Why: Free-text errors can't be handled programmatically by CI gates, dashboards, or compliance reports.
-  Shape:
-  ```ts
-  type VerifyError = {
-    code: 'SEQ_GAP' | 'HASH_MISMATCH' | 'CHAIN_BROKEN' | 'TS_REGRESSION' | 'BAD_JSON' | 'FILE_ERROR' | 'TAIL_ANCHOR_MISMATCH'
-    seq?: number
-    lineNo?: number
-    message: string
-  }
-  ```
-
 - **`errors: VerifyError[]` with `stopOnFirst` option** in `VerifyResult`
   Why: Single `error: string` collapses on first failure. Forensic use needs all violations.
 
@@ -130,8 +115,8 @@ All items deferred from current release. Organized by target version and categor
 - **`verifyAndFilter(filePath, predicate)`** — DSAR export hook
   Why: GDPR Art. 15/20 right of access and portability. Returns matching events with verification proof for the full chain.
 
-- **Structured error codes for DPA-facing use**
-  Why: Free-text error strings won't survive a regulator review. Structured codes + timestamps needed for incident reports.
+- **DPA-facing verification report**
+  Why: `VerifyResult.details.code` is structured, but regulator-facing reports still need timestamps, terminal hash, file hash, and package/verifier version.
 
 - **`AbortSignal` on `verifyFile`**
   Why: Large historical archives will pin the process with no cancellation path.
@@ -146,3 +131,16 @@ All items deferred from current release. Organized by target version and categor
 1. **`eventsChecked` on stream failure** — return actual count or `0` as "stream-level failure" signal?
 2. **`agentName`/`durationMs` outside hash** — intentional per ROADMAP spec, but undocumented. Either add to hash or document explicitly as display-only metadata.
 3. **Tail anchor on crashed runs** — `.head.json` only written on `run.end()`. Crashed/dangling runs have no anchor. Address in v0.2.x with a periodic flush or a run manifest approach.
+
+---
+
+## Completed
+
+- **Tail anchor for completed runs**
+  Done: `run.end()` writes `<runId>.head.json`, and `verifyFile` checks it when present.
+
+- **`runId` filename binding**
+  Done: `verifyFile` asserts each event's `runId` matches `<runId>.jsonl`, closing chain substitution attacks.
+
+- **Structured `VerifyResult.details`**
+  Done: `verifyFile` preserves `error` for compatibility and adds `details.code`, `details.message`, `seq`, `lineNo`, and `lastValidSeq` for machine consumers.

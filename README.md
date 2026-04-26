@@ -178,6 +178,14 @@ recorded chain. Completed runs also write a `.head.json` tail anchor — if pres
 `verifyFile` will detect tail truncation. Runs without a head file (crashed or
 pre-v0.2) verify chain integrity only.
 
+On failure, `verifyFile` preserves the human-readable `error` string and also
+returns structured details for tooling:
+
+```ts
+result.details?.code         // e.g. "HASH_MISMATCH"
+result.details?.lastValidSeq // last sequence number known to be valid
+```
+
 Logs are stored in `.agentlog/runs/` relative to your project root. Set `AGENTLOG_DIR` to change the location.
 
 ---
