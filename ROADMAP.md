@@ -22,6 +22,115 @@ Boring enough to ship. Solid enough to build on.
 
 ---
 
+## Current status — 2026-04-27
+
+### Published package names
+
+```
+@asafhm/agentlog-core
+@asafhm/agentlog-vercel-ai
+@asafhm/agentlog
+```
+
+The CLI package still exposes the `agentlog` binary.
+
+### Shipped
+
+- `generateText` support
+- `streamText` support
+- JSONL writer under `${AGENTLOG_DIR || ".agentlog"}/runs/<runId>.jsonl`
+- completed-run tail anchors via `<runId>.head.json`
+- runId/filename binding in `verifyFile`
+- structured `VerifyResult.details.code`
+- metadata-only capture by default, full capture opt-in
+- examples for generateText and streamText
+- CLI `verify` and `view`
+
+### Current milestone
+
+**v0.2.0-alpha → agentlog studio over existing JSONL files.**
+
+Goal: make the logs visible before making them enterprise-ready.
+
+Scope:
+
+- `agentlog studio`
+- local browser UI
+- reads existing `.agentlog/runs/*.jsonl`
+- verifies each run using `verifyFile`
+- shows run list, validity, event count, and failure code
+- click a run to inspect the event timeline
+- no SQLite requirement
+
+---
+
+## Forward roadmap
+
+### v0.2.0-alpha
+
+```
+README + roadmap cleanup
+tag v0.2.0-alpha
+start agentlog studio over JSONL files
+```
+
+### v0.2.0
+
+```
+agentlog studio over JSONL files
+generateText + streamText examples
+tail-anchor verification for completed runs
+structured verify errors
+```
+
+### v0.2.1 or v0.3
+
+```
+SQLite storage adapter
+run list/query performance improvements
+```
+
+### v0.3
+
+```
+Article 12 / DSAR export
+redaction audit trail with actor + legal basis
+retention/pruning (--max-age)
+verifyFileDetailed
+```
+
+### v0.4
+
+```
+Annex IV stub
+captureStack: true opt-in for ErrorPayload
+```
+
+### v0.5
+
+```
+LangChain adapter
+Mastra adapter
+```
+
+### v0.6
+
+```
+OTel bridge
+```
+
+### Later
+
+```
+MCP
+Hosted dashboard
+Turborepo
+```
+
+---
+
+## Historical v0.1 spec
+
 ## v0.1 — Locked spec
 
 ### Packages
@@ -197,49 +306,6 @@ abc123  support-agent  success  6 events  1.3s
 
 ---
 
-## v0.2
-
-```
-streamText support in @agentlog/vercel-ai
-SQLite storage adapter
-Browser UI (agentlog studio)
-```
-
-## v0.3
-
-```
-Article 12 export
-```
-
-## v0.4
-
-```
-Annex IV stub
-captureStack: true opt-in for ErrorPayload
-```
-
-## v0.5
-
-```
-LangChain adapter
-Mastra adapter
-```
-
-## v0.6
-
-```
-OTel bridge
-```
-
-## Later
-
-```
-MCP
-Hosted dashboard
-```
-
----
-
 ## Differentiators
 
 1. Local-first / zero egress
@@ -255,8 +321,8 @@ Hosted dashboard
 ## What is not in v0.1
 
 ```
-streamText           → v0.2
-SQLite               → v0.2
+streamText           → v0.2 shipped
+SQLite               → v0.2.1 or v0.3
 browser UI           → v0.2
 Article 12 export    → v0.3
 Annex IV stub        → v0.4
