@@ -80,6 +80,8 @@ describe('verifyFile', () => {
     const result = await verifyFile(path);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/hash mismatch/i);
+    expect(result.details?.code).toBe('HASH_MISMATCH');
+    expect(result.details?.lastValidSeq).toBe(0);
   });
 
   it('deleted event fails', async () => {
@@ -91,6 +93,8 @@ describe('verifyFile', () => {
     const result = await verifyFile(path);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/sequence gap|hash chain broken/i);
+    expect(result.details?.code).toBe('SEQ_GAP');
+    expect(result.details?.lastValidSeq).toBe(1);
   });
 
   it('edited redacted event payload fails', async () => {
@@ -104,6 +108,8 @@ describe('verifyFile', () => {
     const result = await verifyFile(path);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/hash mismatch/i);
+    expect(result.details?.code).toBe('HASH_MISMATCH');
+    expect(result.details?.lastValidSeq).toBe(1);
   });
 
   it('runId must match filename', async () => {
@@ -116,6 +122,73 @@ describe('verifyFile', () => {
     const result = await verifyFile(path);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/run id mismatch/i);
+    expect(result.details?.code).toBe('RUN_ID_MISMATCH');
+    expect(result.details?.lastValidSeq).toBe(-1);
+  });
+
+  it('invalid JSON reports BAD_JSON', async () => {
+    const events = buildChain(['run_start', 'prompt']);
+    const path = writeTmp(events);
+    writeFileSync(path, `${JSON.stringify(events[0])}\nnot-json\n`);
+
+    const result = await verifyFile(path);
+    expect(result.valid).toBe(false);
+    expect(result.details?.code).toBe('BAD_JSON');
+    expect(result.details?.lineNo).toBe(2);
+    expect(result.details?.lastValidSeq).toBe(0);
+  });
+
+  it('timestamp regression reports TS_REGRESSION', async () => {
+    const path = writeTmp(buildChain(['run_start', 'prompt', 'response']));
+    const lines = readFileSync(path, 'utf8').trim().split('\n');
+    const regressed = JSON.parse(lines[1]) as AuditEvent;
+    regressed.ts = 1;
+    lines[1] = JSON.stringify(regressed);
+    writeFileSync(path, lines.join('\n') + '\n');
+
+    const result = await verifyFile(path);
+    expect(result.valid).toBe(false);
+    expect(result.details?.code).toBe('TS_REGRESSION');
+    expect(result.details?.seq).toBe(1);
+    expect(result.details?.lastValidSeq).toBe(0);
+  });
+
+  it('changed prevHash reports CHAIN_BROKEN', async () => {
+    const path = writeTmp(buildChain(['run_start', 'prompt', 'response']));
+    const lines = readFileSync(path, 'utf8').trim().split('\n');
+    const broken = JSON.parse(lines[1]) as AuditEvent;
+    broken.prevHash = 'not-the-previous-hash';
+    lines[1] = JSON.stringify(broken);
+    writeFileSync(path, lines.join('\n') + '\n');
+
+    const result = await verifyFile(path);
+    expect(result.valid).toBe(false);
+    expect(result.details?.code).toBe('CHAIN_BROKEN');
+    expect(result.details?.seq).toBe(1);
+    expect(result.details?.lastValidSeq).toBe(0);
+  });
+
+  it('empty file reports EMPTY_FILE', async () => {
+    const dir = join(tmpdir(), randomUUID());
+    mkdirSync(dir);
+    const path = join(dir, `${randomUUID()}.jsonl`);
+    writeFileSync(path, '');
+
+    const result = await verifyFile(path);
+    expect(result.valid).toBe(false);
+    expect(result.eventsChecked).toBe(0);
+    expect(result.details?.code).toBe('EMPTY_FILE');
+    expect(result.details?.lastValidSeq).toBe(-1);
+  });
+
+  it('missing file reports FILE_ERROR', async () => {
+    const path = join(tmpdir(), randomUUID(), `${randomUUID()}.jsonl`);
+
+    const result = await verifyFile(path);
+    expect(result.valid).toBe(false);
+    expect(result.eventsChecked).toBe(0);
+    expect(result.details?.code).toBe('FILE_ERROR');
+    expect(result.details?.lastValidSeq).toBe(-1);
   });
 
   it('valid chain with matching head file passes', async () => {
@@ -135,6 +208,19 @@ describe('verifyFile', () => {
     const result = await verifyFile(path);
     expect(result.valid).toBe(false);
     expect(result.error).toBe('Tail anchor mismatch');
+    expect(result.details?.code).toBe('TAIL_ANCHOR_MISMATCH');
+    expect(result.details?.lastValidSeq).toBe(2);
+  });
+
+  it('unreadable head file reports TAIL_ANCHOR_UNREADABLE', async () => {
+    const events = buildChain(['run_start', 'prompt', 'response', 'run_end']);
+    const path = writeTmp(events);
+    writeFileSync(path.replace(/\.jsonl$/, '.head.json'), 'not-json');
+
+    const result = await verifyFile(path);
+    expect(result.valid).toBe(false);
+    expect(result.details?.code).toBe('TAIL_ANCHOR_UNREADABLE');
+    expect(result.details?.lastValidSeq).toBe(3);
   });
 
   it('run.end() writes head file with correct seq and hash', async () => {

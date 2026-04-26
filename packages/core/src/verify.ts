@@ -4,14 +4,55 @@ import { basename } from 'node:path';
 import { hashEvent, GENESIS } from './crypto.js';
 import type { AuditEvent } from './event.js';
 
+export type VerifyErrorCode =
+  | 'BAD_JSON'
+  | 'SEQ_GAP'
+  | 'RUN_ID_MISMATCH'
+  | 'CHAIN_BROKEN'
+  | 'TS_REGRESSION'
+  | 'HASH_MISMATCH'
+  | 'TAIL_ANCHOR_MISMATCH'
+  | 'TAIL_ANCHOR_UNREADABLE'
+  | 'EMPTY_FILE'
+  | 'FILE_ERROR';
+
+export type VerifyError = {
+  code: VerifyErrorCode;
+  message: string;
+  seq?: number;
+  lineNo?: number;
+  lastValidSeq: number;
+};
+
 export type VerifyResult = {
   valid: boolean;
   eventsChecked: number;
   error?: string;
+  details?: VerifyError;
 };
 
 export async function verifyFile(filePath: string): Promise<VerifyResult> {
   let rl: ReturnType<typeof createInterface> | undefined;
+  let expectedSeq = 0;
+  let eventsChecked = 0;
+
+  function fail(
+    code: VerifyErrorCode,
+    message: string,
+    ctx: Omit<Partial<VerifyError>, 'code' | 'message' | 'lastValidSeq'> = {}
+  ): VerifyResult {
+    return {
+      valid: false,
+      eventsChecked,
+      error: message,
+      details: {
+        code,
+        message,
+        lastValidSeq: expectedSeq - 1,
+        ...ctx,
+      },
+    };
+  }
 
   try {
     const expectedRunId = basename(filePath, '.jsonl');
@@ -22,8 +63,6 @@ export async function verifyFile(filePath: string): Promise<VerifyResult> {
     });
 
     let prevHash = GENESIS;
-    let expectedSeq = 0;
-    let eventsChecked = 0;
     let prevTs: number | undefined;
     let lineNo = 0;
 
@@ -35,35 +74,39 @@ export async function verifyFile(filePath: string): Promise<VerifyResult> {
       try {
         event = JSON.parse(line);
       } catch {
-        return { valid: false, eventsChecked, error: `Invalid JSON at line ${lineNo}` };
+        return fail('BAD_JSON', `Invalid JSON at line ${lineNo}`, { lineNo });
       }
 
       if (event.seq !== expectedSeq) {
-        return { valid: false, eventsChecked, error: `Sequence gap at seq ${event.seq}, expected ${expectedSeq}` };
+        return fail('SEQ_GAP', `Sequence gap at seq ${event.seq}, expected ${expectedSeq}`, { seq: event.seq });
       }
 
       if (event.runId !== expectedRunId) {
-        return { valid: false, eventsChecked, error: `Run ID mismatch at seq ${event.seq}` };
+        return fail('RUN_ID_MISMATCH', `Run ID mismatch at seq ${event.seq}`, { seq: event.seq });
       }
 
       if (event.prevHash !== prevHash) {
-        return { valid: false, eventsChecked, error: `Hash chain broken at seq ${event.seq}` };
+        return fail('CHAIN_BROKEN', `Hash chain broken at seq ${event.seq}`, { seq: event.seq });
       }
 
       if (prevTs !== undefined && event.ts < prevTs) {
-        return { valid: false, eventsChecked, error: `Timestamp regression at seq ${event.seq}` };
+        return fail('TS_REGRESSION', `Timestamp regression at seq ${event.seq}`, { seq: event.seq });
       }
 
       const { hash, ...rest } = event;
       const recomputed = hashEvent(rest);
       if (recomputed !== hash) {
-        return { valid: false, eventsChecked, error: `Hash mismatch at seq ${event.seq}` };
+        return fail('HASH_MISMATCH', `Hash mismatch at seq ${event.seq}`, { seq: event.seq });
       }
 
       prevHash = event.hash;
       prevTs = event.ts;
       expectedSeq++;
       eventsChecked++;
+    }
+
+    if (eventsChecked === 0) {
+      return fail('EMPTY_FILE', 'File contains no events');
     }
 
     const headPath = filePath.replace(/\.jsonl$/, '.head.json');
@@ -76,10 +119,10 @@ export async function verifyFile(filePath: string): Promise<VerifyResult> {
         };
         const lastSeq = expectedSeq - 1;
         if (head.runId !== expectedRunId || head.seq !== lastSeq || head.hash !== prevHash) {
-          return { valid: false, eventsChecked, error: 'Tail anchor mismatch' };
+          return fail('TAIL_ANCHOR_MISMATCH', 'Tail anchor mismatch');
         }
       } catch {
-        return { valid: false, eventsChecked, error: 'Tail anchor unreadable' };
+        return fail('TAIL_ANCHOR_UNREADABLE', 'Tail anchor unreadable');
       }
     }
 
@@ -87,7 +130,7 @@ export async function verifyFile(filePath: string): Promise<VerifyResult> {
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { valid: false, eventsChecked: 0, error: `File error: ${message}` };
+    return fail('FILE_ERROR', `File error: ${message}`);
   } finally {
     rl?.close();
   }
