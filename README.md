@@ -142,7 +142,14 @@ agentlog verify .agentlog/runs/<runId>.jsonl
 
 # View a run log as a human-readable timeline
 agentlog view .agentlog/runs/<runId>.jsonl
+
+# Open local browser studio for existing JSONL runs
+agentlog studio
 ```
+
+Studio serves a local UI at `http://127.0.0.1:3001`, reads
+`.agentlog/runs/*.jsonl`, verifies each run, and lets you inspect the event
+timeline. Set `AGENTLOG_STUDIO_PORT` to choose a different port.
 
 Example `view` output:
 

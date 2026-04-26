@@ -44,11 +44,11 @@ The CLI package still exposes the `agentlog` binary.
 - structured `VerifyResult.details.code`
 - metadata-only capture by default, full capture opt-in
 - examples for generateText and streamText
-- CLI `verify` and `view`
+- CLI `verify`, `view`, and first-pass `studio`
 
 ### Current milestone
 
-**v0.2.0-alpha → agentlog studio over existing JSONL files.**
+**v0.2.0-alpha → polish agentlog studio over existing JSONL files.**
 
 Goal: make the logs visible before making them enterprise-ready.
 
