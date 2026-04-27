@@ -38,6 +38,8 @@ The CLI package still exposes the `agentlog` binary.
 
 - `generateText` support
 - `streamText` support
+- npm alpha packages published under the `alpha` dist-tag
+- GitHub `v0.2.0-alpha` pre-release published
 - JSONL writer under `${AGENTLOG_DIR || ".agentlog"}/runs/<runId>.jsonl`
 - completed-run tail anchors via `<runId>.head.json`
 - runId/filename binding in `verifyFile`
@@ -45,23 +47,31 @@ The CLI package still exposes the `agentlog` binary.
 - metadata-only capture by default, full capture opt-in
 - examples for generateText, streamText, and support triage
 - CLI `verify`, `view`, and first-pass `studio`
+- support triage demo verified across approved, denied, not-found, and policy-error paths
 
 ### Current milestone
 
-**v0.2.0-alpha → polish agentlog studio over existing JSONL files.**
+**v0.2.0 → make the support-triage demo instantly understandable.**
 
 Goal: make the logs visible before making them enterprise-ready.
 
 Scope:
 
-- `agentlog studio`
-- local browser UI
-- reads existing `.agentlog/runs/*.jsonl`
-- verifies each run using `verifyFile`
-- shows run list, validity, event count, and failure code
-- click a run to inspect the event timeline
-- no SQLite requirement
-- support triage demo as the first product story
+- capture 2-3 studio screenshots from the support-triage runs
+- add a README demo section that answers "what did my agent do, and why?"
+- keep `agentlog studio` simple: run list, verify status, event timeline, payload view
+- use existing JSONL files only; no SQLite requirement
+- polish only the rough edges that block understanding
+- defer compliance and storage features until there is user pull
+
+Definition of done:
+
+- 3 studio screenshots exist
+- README has one clear support-triage demo section
+- install -> run -> verify -> studio works from docs
+- no new architecture
+- no SQLite
+- no compliance export
 
 ---
 
@@ -70,52 +80,76 @@ Scope:
 ### v0.2.0-alpha
 
 ```
-README + roadmap cleanup
-tag v0.2.0-alpha
-start agentlog studio over JSONL files
+published alpha packages
+GitHub pre-release
+streamText support
+tail anchors
+structured verify errors
+first-pass agentlog studio over JSONL files
+support triage demo
 ```
 
 ### v0.2.0
 
 ```
-agentlog studio over JSONL files
-generateText + streamText examples
-support triage example
-tail-anchor verification for completed runs
-structured verify errors
+README demo section with screenshots
+support triage product story
+studio polish for run list + event timeline
+clear install/run/verify/studio path
+no new storage layer
 ```
 
-### v0.2.1 or v0.3
+### v0.2.1
 
 ```
-SQLite storage adapter
-run list/query performance improvements
+feedback-driven polish
+studio usability fixes
+README/example cleanup
+small verifier or adapter fixes discovered by users
+```
+
+### v0.2.2
+
+```
+timeline readability improvements
+highlight decisions: approved, denied, manual_review, error
+make tool calls/results easier to scan
+improve failed-tool visibility in studio
 ```
 
 ### v0.3
 
 ```
-Article 12 / DSAR export
-redaction audit trail with actor + legal basis
-retention/pruning (--max-age)
-verifyFileDetailed
+SQLite storage adapter only if JSONL becomes painful
+run list/query performance improvements only if needed
+do not build storage abstraction without user or personal pain
 ```
 
 ### v0.4
+
+```
+Article 12 / DSAR export only if users ask for audit/compliance export
+redaction audit trail with actor + legal basis
+retention/pruning (--max-age)
+verifyFileDetailed
+do not build compliance features before user pull
+```
+
+### v0.5
 
 ```
 Annex IV stub
 captureStack: true opt-in for ErrorPayload
 ```
 
-### v0.5
+### v0.6
 
 ```
 LangChain adapter
 Mastra adapter
 ```
 
-### v0.6
+### v0.7
 
 ```
 OTel bridge
