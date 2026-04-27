@@ -1,10 +1,28 @@
 # agentlog — Technical Debt
 
 All items deferred from current release. Organized by target version and category.
+Current product priority: make the support-triage demo understandable before
+adding storage, compliance, or framework breadth.
 
 ---
 
 ## v0.2.x
+
+### Product Demo & Studio
+
+- **README support-triage demo section with screenshots**
+  Why: The project now has a real product story, but the README needs to show it in five seconds: run list, event timeline, and failure/manual-review path.
+
+- **Studio timeline readability**
+  Why: `agentlog studio` exists, but adoption depends on whether users can quickly answer "what did my agent do, and why?"
+  Keep scope narrow:
+  - highlight decisions: `refund_approved`, `refund_denied`, `manual_review`, `error`
+  - make tool calls/results easier to scan
+  - improve failed-tool visibility
+  - avoid charts, filters, SQLite, and dashboard polish until users ask
+
+- **Install -> run -> verify -> studio docs path**
+  Why: v0.2.0 should be shippable when a new user can copy the README commands and see the support-triage logs in studio without guessing.
 
 ### Core — Verify
 
@@ -13,17 +31,6 @@ All items deferred from current release. Organized by target version and categor
 
 - **`eventsChecked` preserved on stream failure**
   Why: Outer catch returns `eventsChecked: 0` even if the stream fails mid-file after events were validated. Loses partial progress info.
-
-- **`verifyFileDetailed`** — extended `VerifyResult` for compliance use
-  Why: Annex IV evidentiary use requires `firstTimestamp`, `lastTimestamp`, `terminalHash`, `verifierVersion`.
-  ```ts
-  type VerifyResultDetailed = VerifyResult & {
-    firstTimestamp?: number
-    lastTimestamp?: number
-    terminalHash?: string
-    verifierVersion: string
-  }
-  ```
 
 - **Schema validation on parse** — validate event shape with zod/valibot in `verifyFile`
   Why: A malicious file with `ts: undefined` or `seq: "0"` passes chain checks but produces incorrect state silently.
@@ -75,7 +82,8 @@ All items deferred from current release. Organized by target version and categor
 ### Core — Storage
 
 - **`EventSource` abstraction** — decouple verifier from JSONL transport
-  Why: v0.3 SQLite adapter needs the same verification logic without duplicating it.
+  Why: SQLite or other transports will need the same verification logic without duplicating it.
+  Trigger: only when JSONL becomes painful through user feedback or personal usage.
   ```ts
   interface EventSource {
     events(): AsyncIterable<string>
@@ -84,6 +92,7 @@ All items deferred from current release. Organized by target version and categor
 
 - **SQLite storage adapter**
   Why: JSONL is hard to query. SQLite enables run list, filtering, and DSAR exports.
+  Trigger: do not build until JSONL is demonstrably painful.
 
 ---
 
@@ -96,9 +105,6 @@ All items deferred from current release. Organized by target version and categor
 
 ### CLI
 
-- **Browser UI** (`agentlog studio`)
-  Why: Terminal-only view is functional but not the "wow" moment for adoption. A local `localhost:3001` timeline is.
-
 - **`--max-age` pruning command**
   Why: JSONL files that live forever are a GDPR liability under Art. 5(1)(e) (storage limitation). Deleting whole run files is GDPR-clean; line-level deletion is not.
 
@@ -108,6 +114,18 @@ All items deferred from current release. Organized by target version and categor
 ---
 
 ## v0.3 — Compliance track
+
+- **`verifyFileDetailed`** — extended `VerifyResult` for compliance use
+  Why: Annex IV evidentiary use requires `firstTimestamp`, `lastTimestamp`, `terminalHash`, `verifierVersion`.
+  Trigger: only when users ask for audit/compliance export.
+  ```ts
+  type VerifyResultDetailed = VerifyResult & {
+    firstTimestamp?: number
+    lastTimestamp?: number
+    terminalHash?: string
+    verifierVersion: string
+  }
+  ```
 
 - **Redaction audit trail** on the redacted event payload
   Why: GDPR Art. 17 erasure requires knowing who redacted, when, and under what legal basis. Current `redacted` event only closes the hash chain hole — it carries no actor, legal basis, or timestamp.
@@ -131,6 +149,8 @@ All items deferred from current release. Organized by target version and categor
 1. **`eventsChecked` on stream failure** — return actual count or `0` as "stream-level failure" signal?
 2. **`agentName`/`durationMs` outside hash** — intentional per ROADMAP spec, but undocumented. Either add to hash or document explicitly as display-only metadata.
 3. **Tail anchor on crashed runs** — `.head.json` only written on `run.end()`. Crashed/dangling runs have no anchor. Address in v0.2.x with a periodic flush or a run manifest approach.
+4. **SQLite trigger** — build only when JSONL becomes painful, not because it is listed on the roadmap.
+5. **Compliance trigger** — build Article 12/DSAR/export features only when users ask for audit/compliance output.
 
 ---
 
@@ -144,3 +164,9 @@ All items deferred from current release. Organized by target version and categor
 
 - **Structured `VerifyResult.details`**
   Done: `verifyFile` preserves `error` for compatibility and adds `details.code`, `details.message`, `seq`, `lineNo`, and `lastValidSeq` for machine consumers.
+
+- **First-pass browser UI** (`agentlog studio`)
+  Done: local studio reads JSONL runs, verifies them, shows run list and event timeline.
+
+- **Support triage product demo**
+  Done: support-triage example covers approved, denied, not-found, and policy-error paths, and generated logs verified cleanly.
