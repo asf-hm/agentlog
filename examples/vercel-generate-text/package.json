@@ -1,6 +1,6 @@
 {
   "name": "vercel-generate-text",
-  "version": "0.2.3-alpha.2",
+  "version": "0.2.3",
   "description": "",
   "main": "index.js",
   "scripts": {
