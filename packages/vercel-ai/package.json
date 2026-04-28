@@ -1,7 +1,7 @@
 {
   "name": "@asafhm/agentlog-vercel-ai",
-  "version": "0.2.6",
-  "description": "Vercel AI SDK adapter for agentlog — automatic audit logging for generateText",
+  "version": "0.2.7",
+  "description": "Vercel AI SDK adapter for agentlog — audit logging for generateText and streamText",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

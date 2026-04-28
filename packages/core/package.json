@@ -1,6 +1,6 @@
 {
   "name": "@asafhm/agentlog-core",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Tamper-evident audit logging for AI agents — hash-chained JSONL run files",
   "type": "module",
   "main": "./dist/index.js",

@@ -262,7 +262,16 @@ npx agentlog studio               # local browser UI at http://127.0.0.1:3001
 
 ## Status
 
-Alpha. Core API is stable; expect changes before 1.0.
+| | |
+|---|---|
+| Core logger | Stable enough for local experiments |
+| CLI (`verify`, `view`, `studio`) | Supported |
+| Vercel AI SDK — `generateText` | Supported |
+| Vercel AI SDK — `streamText` | Supported |
+| Cryptographic signing (private key) | Planned |
+| Cloud backend / remote storage | Not planned |
+
+API is stable; expect changes before 1.0.
 
 ---
 
