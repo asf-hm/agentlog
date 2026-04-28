@@ -1,10 +1,11 @@
 {
   "name": "@asafhm/agentlog",
-  "version": "0.2.3-alpha.1",
+  "version": "0.2.3-alpha.2",
   "description": "CLI for agentlog — verify and view tamper-evident AI agent run logs",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "bin": {
     "agentlog": "./dist/index.js"
