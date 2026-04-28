@@ -1,6 +1,6 @@
 {
   "name": "@asafhm/agentlog",
-  "version": "0.2.2-alpha.0",
+  "version": "0.2.3-alpha.0",
   "description": "CLI for agentlog — verify and view tamper-evident AI agent run logs",
   "type": "module",
   "files": [
@@ -13,7 +13,14 @@
     "build": "tsup",
     "dev": "tsup --watch"
   },
-  "keywords": ["ai", "agent", "audit", "logging", "cli", "tamper-evident"],
+  "keywords": [
+    "ai",
+    "agent",
+    "audit",
+    "logging",
+    "cli",
+    "tamper-evident"
+  ],
   "author": "Asaf Haim",
   "license": "MIT",
   "repository": {
